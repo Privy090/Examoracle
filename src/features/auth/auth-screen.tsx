@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Brain, Eye, Lock, Mail, School, UserRound } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { type Resolver, useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { mockUser } from "@/constants/mock-data";
@@ -28,7 +28,7 @@ export function AuthScreen() {
   const setUser = useAppStore((state) => state.setUser);
   const schema = mode === "login" ? loginSchema : signupSchema;
   const form = useForm<AuthValues>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(schema) as unknown as Resolver<AuthValues>,
     defaultValues: { email: "", password: "", fullName: "", school: "", faculty: "", department: "", level: "300" }
   });
 
