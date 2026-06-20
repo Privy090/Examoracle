@@ -7,7 +7,6 @@ import { useState } from "react";
 import { type Resolver, useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { mockUser } from "@/constants/mock-data";
 import { useAppStore } from "@/store/app-store";
 import { loginSchema, signupSchema } from "@/validators/auth.schema";
 
@@ -25,6 +24,7 @@ export function AuthScreen() {
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [showPass, setShowPass] = useState(false);
   const router = useRouter();
+  const existingUser = useAppStore((state) => state.user);
   const setUser = useAppStore((state) => state.setUser);
   const schema = mode === "login" ? loginSchema : signupSchema;
   const form = useForm<AuthValues>({
@@ -32,9 +32,30 @@ export function AuthScreen() {
     defaultValues: { email: "", password: "", fullName: "", school: "", faculty: "", department: "", level: "300" }
   });
 
-  async function onSubmit() {
-    setUser(mockUser);
-    router.push("/dashboard");
+  async function onSubmit(values: AuthValues) {
+    if (mode === "login") {
+      if (!existingUser || existingUser.email.toLowerCase() !== values.email.toLowerCase()) {
+        form.setError("email", { message: "No local account found for this email. Create an account first." });
+        return;
+      }
+      router.push(existingUser.onboardingComplete ? "/dashboard" : "/onboarding");
+      return;
+    }
+
+    setUser({
+      id: crypto.randomUUID(),
+      fullName: values.fullName,
+      email: values.email,
+      school: values.school,
+      faculty: values.faculty,
+      department: values.department,
+      level: values.level,
+      avatar: null,
+      role: "student",
+      joinedAt: new Date().toISOString(),
+      onboardingComplete: false
+    });
+    router.push("/onboarding");
   }
 
   return (
@@ -65,7 +86,7 @@ export function AuthScreen() {
                 <Input {...form.register("fullName")} placeholder="Enter full name" />
               </Field>
               <Field icon={<School size={16} />} label="University / School" error={form.formState.errors.school?.message}>
-                <Input {...form.register("school")} placeholder="University of Nigeria, Nsukka" />
+                <Input {...form.register("school")} placeholder="Your university or school" />
               </Field>
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="Faculty" error={form.formState.errors.faculty?.message}><Input {...form.register("faculty")} /></Field>
@@ -76,7 +97,7 @@ export function AuthScreen() {
 
           <div className="mt-4 grid gap-4">
             <Field icon={<Mail size={16} />} label="Email Address" error={form.formState.errors.email?.message}>
-              <Input {...form.register("email")} type="email" placeholder="chidera@unn.edu.ng" />
+              <Input {...form.register("email")} type="email" placeholder="student@university.edu" />
             </Field>
             <Field icon={<Lock size={16} />} label="Password" error={form.formState.errors.password?.message}>
               <div className="relative">

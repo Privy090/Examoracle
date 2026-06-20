@@ -1,7 +1,7 @@
 "use client";
 
 import { RotateCcw, Trash2, UploadCloud, X } from "lucide-react";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -14,13 +14,18 @@ import { uploadFileSchema } from "@/validators/upload.schema";
 export function UploadPage() {
   const courses = useAppStore((state) => state.courses);
   const files = useAppStore((state) => state.files);
-  const setFiles = useAppStore((state) => state.setFiles);
   const upsertFile = useAppStore((state) => state.upsertFile);
+  const removeFile = useAppStore((state) => state.removeFile);
   const [selectedCourse, setSelectedCourse] = useState(courses[0]?.id);
   const [dragging, setDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    if (!selectedCourse && courses[0]) setSelectedCourse(courses[0].id);
+  }, [courses, selectedCourse]);
+
   const handleFiles = useCallback(async (incoming: FileList | File[]) => {
+    if (!selectedCourse) return;
     const list = Array.from(incoming);
     for (const file of list) {
       const parsed = uploadFileSchema.safeParse(file);
@@ -43,13 +48,13 @@ export function UploadPage() {
     <div className="grid gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
       <Card className="h-fit">
         <label className="mb-2 block text-sm font-bold text-[var(--muted)]">Upload for Course</label>
-        <div className="flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible">
+        {courses.length ? <div className="flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible">
           {courses.map((course) => (
             <button key={course.id} onClick={() => setSelectedCourse(course.id)} className={selectedCourse === course.id ? "shrink-0 rounded-[10px] border border-oracle-primary bg-oracle-primary/15 px-4 py-2 text-sm font-bold text-oracle-primary" : "shrink-0 rounded-[10px] border border-[var(--border)] bg-[var(--subtle)] px-4 py-2 text-sm font-bold text-[var(--muted)]"}>
               {course.code}
             </button>
           ))}
-        </div>
+        </div> : <p className="text-sm text-[var(--muted)]">Add a course before uploading study material.</p>}
       </Card>
 
       <section className="grid gap-4">
@@ -58,7 +63,7 @@ export function UploadPage() {
           onDragOver={(event) => { event.preventDefault(); setDragging(true); }}
           onDragLeave={() => setDragging(false)}
           onDrop={(event) => { event.preventDefault(); setDragging(false); void handleFiles(event.dataTransfer.files); }}
-          className={dragging ? "cursor-pointer rounded-2xl border-2 border-dashed border-oracle-primary bg-oracle-primary/10 p-8 text-center" : "cursor-pointer rounded-2xl border-2 border-dashed border-[var(--border)] bg-[var(--subtle)] p-8 text-center"}
+          className={courses.length ? (dragging ? "cursor-pointer rounded-2xl border-2 border-dashed border-oracle-primary bg-oracle-primary/10 p-8 text-center" : "cursor-pointer rounded-2xl border-2 border-dashed border-[var(--border)] bg-[var(--subtle)] p-8 text-center") : "pointer-events-none rounded-2xl border-2 border-dashed border-[var(--border)] bg-[var(--subtle)] p-8 text-center opacity-60"}
           role="button"
           tabIndex={0}
         >
@@ -85,7 +90,7 @@ export function UploadPage() {
                 <Badge small color={file.status === "completed" ? "#00D9A0" : file.status === "error" ? "#FF6B6B" : "#6C63FF"}>{file.status.toUpperCase()}</Badge>
                 {file.status === "error" && <Button variant="ghost" className="h-9 w-9 px-0" aria-label="Retry"><RotateCcw size={15} /></Button>}
                 {file.status === "uploading" && <Button variant="ghost" className="h-9 w-9 px-0" aria-label="Cancel"><X size={15} /></Button>}
-                <Button variant="ghost" className="h-9 w-9 px-0" aria-label="Remove file" onClick={() => setFiles(files.filter((item) => item.id !== file.id))}><Trash2 size={15} /></Button>
+                <Button variant="ghost" className="h-9 w-9 px-0" aria-label="Remove file" onClick={() => removeFile(file.id)}><Trash2 size={15} /></Button>
               </Card>
             );
           })}

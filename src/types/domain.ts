@@ -13,6 +13,7 @@ export interface UserProfile {
   avatar?: string | null;
   role?: UserRole;
   joinedAt: string;
+  onboardingComplete?: boolean;
 }
 
 export interface Course {
@@ -60,6 +61,17 @@ export interface CoursePrediction {
   recommendations: string[];
   riskMeter: number;
   weeklyPlan: WeeklyPlanItem[];
+  generatedAt?: string;
+  sourceFileIds?: string[];
+  analytics?: PredictionAnalytics;
+}
+
+export interface PredictionAnalytics {
+  confidence: number;
+  materialCoverage: number;
+  pastQuestionWeight: number;
+  sourceCount: number;
+  fileTypeMix: Array<{ type: string; count: number }>;
 }
 
 export interface StudyTask {

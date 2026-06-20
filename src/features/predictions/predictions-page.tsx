@@ -1,28 +1,32 @@
 "use client";
 
 import { Brain } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { TopicProbabilityChart } from "@/components/charts/lazy-charts";
 import { PredictionCard } from "@/components/predictions/prediction-card";
 import { RiskMeter } from "@/components/predictions/risk-meter";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/shared/empty-state";
-import { mockPrediction } from "@/constants/mock-data";
 import { useAppStore } from "@/store/app-store";
 
 type Tab = "topics" | "recommendations" | "risk" | "plan" | "analytics";
 
 export function PredictionsPage() {
   const courses = useAppStore((state) => state.courses);
-  const analyzedCourses = courses.filter((course) => course.analyzed);
+  const predictions = useAppStore((state) => state.predictions);
+  const analyzedCourses = courses.filter((course) => course.analyzed && predictions[course.id]);
   const [selectedId, setSelectedId] = useState(analyzedCourses[0]?.id);
   const [tab, setTab] = useState<Tab>("topics");
   const selected = courses.find((course) => course.id === selectedId);
-  const prediction = useMemo(() => ({ ...mockPrediction, courseId: selectedId ?? "c1" }), [selectedId]);
+  const prediction = selectedId ? predictions[selectedId] : undefined;
 
-  if (!selected) {
-    return <EmptyState title="No Predictions Yet" description="Upload materials and run analysis on a course to see AI predictions here." />;
+  useEffect(() => {
+    if (!selectedId && analyzedCourses[0]) setSelectedId(analyzedCourses[0].id);
+  }, [analyzedCourses, selectedId]);
+
+  if (!selected || !prediction) {
+    return <EmptyState title="No Predictions Yet" description="Upload materials and run analysis on a course. ExamOracle will not show generated rankings until student data exists." />;
   }
 
   return (
@@ -40,7 +44,7 @@ export function PredictionsPage() {
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-oracle-primary/15 text-oracle-primary"><Brain size={22} /></div>
           <div className="min-w-0">
             <h2 className="truncate text-sm font-black sm:text-base">{selected.title} · AI Analysis Complete</h2>
-            <p className="truncate text-xs text-[var(--muted)]">{prediction.topics.length} topics analyzed · Analyzed {selected.lastAnalyzed}</p>
+            <p className="truncate text-xs text-[var(--muted)]">{prediction.topics.length} topics analyzed · {prediction.analytics?.sourceCount ?? 0} source files · Analyzed {selected.lastAnalyzed}</p>
           </div>
         </Card>
 
@@ -80,13 +84,15 @@ export function PredictionsPage() {
 
         {tab === "analytics" && (
           <div className="grid gap-3 md:grid-cols-2">
-            {["Topic Frequency Analysis", "Lecturer Pattern Analysis", "Study Priority Matrix", "Exam Confidence Meter"].map((title, index) => (
-              <Card key={title}>
-                <p className="text-sm font-black">{title}</p>
-                <div className="mt-4 h-24 rounded-xl bg-gradient-to-br from-oracle-primary/15 to-oracle-accent/10" />
-                <Badge className="mt-3" color={index % 2 ? "#00D9A0" : "#6C63FF"}>{index % 2 ? "Stable" : "High signal"}</Badge>
-              </Card>
-            ))}
+            <Metric title="Exam Confidence Meter" value={`${prediction.analytics?.confidence ?? 0}%`} detail="Average topic confidence from uploaded course material." />
+            <Metric title="Material Coverage" value={`${prediction.analytics?.materialCoverage ?? 0}%`} detail="Coverage estimate from completed source files." />
+            <Metric title="Past Question Weight" value={`${prediction.analytics?.pastQuestionWeight ?? 0}%`} detail="How strongly past questions influenced ranking." />
+            <Card>
+              <p className="text-sm font-black">File Type Mix</p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {prediction.analytics?.fileTypeMix.length ? prediction.analytics.fileTypeMix.map((item) => <Badge key={item.type}>{item.type.toUpperCase()} · {item.count}</Badge>) : <span className="text-sm text-[var(--muted)]">No source mix available.</span>}
+              </div>
+            </Card>
           </div>
         )}
 
@@ -108,5 +114,15 @@ export function PredictionsPage() {
         )}
       </section>
     </div>
+  );
+}
+
+function Metric({ title, value, detail }: { title: string; value: string; detail: string }) {
+  return (
+    <Card>
+      <p className="text-sm font-black">{title}</p>
+      <div className="mt-3 text-3xl font-black text-oracle-primary">{value}</div>
+      <p className="mt-2 text-sm leading-6 text-[var(--muted)]">{detail}</p>
+    </Card>
   );
 }
