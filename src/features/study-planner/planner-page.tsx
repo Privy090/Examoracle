@@ -1,6 +1,6 @@
 "use client";
 
-import { Check } from "lucide-react";
+import { Check, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { COLORS } from "@/constants/design-tokens";
@@ -19,12 +19,16 @@ export function PlannerPage() {
 
   return (
     <div className="grid gap-4">
-      <Card>
-        <h2 className="text-base font-black">Revision Roadmap</h2>
-        <p className="mt-2 text-sm leading-6 text-[var(--muted)]">Study tasks are generated after a student uploads course materials and runs analysis. No placeholder schedule is shown.</p>
+      <Card className="rounded-[24px] border-oracle-primary/20 bg-gradient-to-br from-oracle-primary/10 via-[var(--surface)] to-oracle-accent/10 p-5">
+        <div className="inline-flex items-center gap-2 rounded-full border border-oracle-primary/20 bg-white/10 px-3 py-1 text-sm font-semibold text-oracle-primary">
+          <Sparkles size={15} />
+          Revision flow
+        </div>
+        <h2 className="mt-3 text-xl font-black">Stay focused with a calm, guided plan.</h2>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--muted)]">Your study planner becomes more useful as materials are uploaded and analysis is completed.</p>
       </Card>
       <section className="grid gap-2">
-        <h2 className="text-base font-black">Study Tasks</h2>
+        <h2 className="text-base font-black">Study tasks</h2>
         {tasks.length ? tasks.map((task) => (
           <Card key={task.id} className="flex items-center gap-3 p-3">
             <button onClick={() => toggleTask(task.id)} className={task.done ? "flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-oracle-green text-black" : "h-6 w-6 shrink-0 rounded-md border-2 border-[var(--border)]"} aria-label={`Toggle ${task.title}`}>

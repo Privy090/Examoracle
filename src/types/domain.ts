@@ -4,6 +4,7 @@ export type UserRole = "student" | "admin" | "support";
 
 export interface UserProfile {
   id: string;
+  tenantId?: string;
   fullName: string;
   email: string;
   school: string;
@@ -18,6 +19,7 @@ export interface UserProfile {
 
 export interface Course {
   id: string;
+  tenantId?: string;
   code: string;
   title: string;
   level: string;
@@ -30,6 +32,7 @@ export interface Course {
 
 export interface UploadedFileRecord {
   id: string;
+  tenantId?: string;
   courseId?: string;
   name: string;
   size: number;
@@ -55,6 +58,8 @@ export interface WeeklyPlanItem {
 }
 
 export interface CoursePrediction {
+  id?: string;
+  tenantId?: string;
   courseId: string;
   topics: PredictionTopic[];
   studyOrder: string[];
@@ -81,4 +86,15 @@ export interface StudyTask {
   due: string;
   done: boolean;
   priority: RiskLevel;
+}
+
+export type AnalysisJobStatus = "queued" | "processing" | "completed" | "failed" | "cancelled";
+
+export interface AnalysisJob {
+  id: string;
+  tenantId?: string;
+  courseId: string;
+  status: AnalysisJobStatus;
+  queuedAt: string;
+  error?: string;
 }

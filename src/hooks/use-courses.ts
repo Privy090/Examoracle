@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { analysisJobService } from "@/services/api/analysis-job.service";
 import { courseService } from "@/services/api/course.service";
 
 export function useCourses() {
@@ -10,7 +11,7 @@ export function useCourses() {
 export function useAnalyzeCourse() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: courseService.analyze,
+    mutationFn: (courseId: string) => analysisJobService.create({ courseId }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["courses"] })
   });
 }

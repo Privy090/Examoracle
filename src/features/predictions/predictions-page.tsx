@@ -1,6 +1,6 @@
 "use client";
 
-import { Brain } from "lucide-react";
+import { Brain, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { TopicProbabilityChart } from "@/components/charts/lazy-charts";
 import { PredictionCard } from "@/components/predictions/prediction-card";
@@ -26,7 +26,7 @@ export function PredictionsPage() {
   }, [analyzedCourses, selectedId]);
 
   if (!selected || !prediction) {
-    return <EmptyState title="No Predictions Yet" description="Upload materials and run analysis on a course. ExamOracle will not show generated rankings until student data exists." />;
+    return <EmptyState title="No predictions yet" description="Upload materials and run analysis on a course to unlock your first AI-generated study insight." />;
   }
 
   return (
@@ -64,7 +64,7 @@ export function PredictionsPage() {
 
         {tab === "topics" && (
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_380px]">
-            <Card><TopicProbabilityChart topics={prediction.topics} /></Card>
+            <Card className="rounded-[24px]"><TopicProbabilityChart topics={prediction.topics} /></Card>
             <div className="grid gap-2">{prediction.topics.map((topic, index) => <PredictionCard key={topic.name} topic={topic} rank={index + 1} />)}</div>
           </div>
         )}
@@ -80,15 +80,18 @@ export function PredictionsPage() {
           </div>
         )}
 
-        {tab === "risk" && <Card><RiskMeter value={prediction.riskMeter} /></Card>}
+        {tab === "risk" && <Card className="rounded-[24px]"><RiskMeter value={prediction.riskMeter} /></Card>}
 
         {tab === "analytics" && (
           <div className="grid gap-3 md:grid-cols-2">
             <Metric title="Exam Confidence Meter" value={`${prediction.analytics?.confidence ?? 0}%`} detail="Average topic confidence from uploaded course material." />
             <Metric title="Material Coverage" value={`${prediction.analytics?.materialCoverage ?? 0}%`} detail="Coverage estimate from completed source files." />
             <Metric title="Past Question Weight" value={`${prediction.analytics?.pastQuestionWeight ?? 0}%`} detail="How strongly past questions influenced ranking." />
-            <Card>
-              <p className="text-sm font-black">File Type Mix</p>
+            <Card className="rounded-[24px]">
+              <div className="flex items-center gap-2 text-sm font-black">
+                <Sparkles size={15} />
+                File Type Mix
+              </div>
               <div className="mt-4 flex flex-wrap gap-2">
                 {prediction.analytics?.fileTypeMix.length ? prediction.analytics.fileTypeMix.map((item) => <Badge key={item.type}>{item.type.toUpperCase()} · {item.count}</Badge>) : <span className="text-sm text-[var(--muted)]">No source mix available.</span>}
               </div>
@@ -99,10 +102,10 @@ export function PredictionsPage() {
         {tab === "plan" && (
           <div className="grid gap-3">
             {prediction.weeklyPlan.map((week) => (
-              <Card key={week.week}>
+              <Card key={week.week} className="rounded-[24px]">
                 <div className="mb-3 flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-xs font-bold text-[var(--muted)]">WEEK {week.week}</p>
+                    <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--muted)]">Week {week.week}</p>
                     <h3 className="text-base font-black">{week.focus}</h3>
                   </div>
                   <Badge>{week.hours}h</Badge>
@@ -119,7 +122,7 @@ export function PredictionsPage() {
 
 function Metric({ title, value, detail }: { title: string; value: string; detail: string }) {
   return (
-    <Card>
+    <Card className="rounded-[24px]">
       <p className="text-sm font-black">{title}</p>
       <div className="mt-3 text-3xl font-black text-oracle-primary">{value}</div>
       <p className="mt-2 text-sm leading-6 text-[var(--muted)]">{detail}</p>

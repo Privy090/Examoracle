@@ -18,7 +18,6 @@ export function ProfilePage({ settingsOnly = false }: { settingsOnly?: boolean }
           <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-oracle-primary to-oracle-accent text-3xl font-black text-white shadow-glow">{user.fullName[0]}</div>
           <h2 className="text-2xl font-black">{user.fullName}</h2>
           <p className="text-sm text-[var(--muted)]">{user.email}</p>
-          <Badge className="mt-3">{user.level}L Student</Badge>
         </section>
       )}
 
@@ -27,8 +26,7 @@ export function ProfilePage({ settingsOnly = false }: { settingsOnly?: boolean }
           {[
             [School, "University", user.school],
             [GraduationCap, "Faculty", user.faculty],
-            [BookOpen, "Department", user.department],
-            [Star, "Level", `${user.level} Level`]
+            [BookOpen, "Department", user.department]
           ].map(([Icon, label, value]) => {
             const TypedIcon = Icon as typeof School;
             return (

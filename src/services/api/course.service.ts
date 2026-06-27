@@ -9,9 +9,5 @@ export const courseService = {
   async create(input: Pick<Course, "code" | "title" | "level" | "credits">): Promise<Course> {
     const { data } = await apiClient.post<Course>("/api/courses", input);
     return data;
-  },
-  async analyze(courseId: string): Promise<Course> {
-    const { data } = await apiClient.post<Course>("/api/analyze", { courseId });
-    return data;
   }
 };

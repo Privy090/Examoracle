@@ -1,11 +1,11 @@
-import { BookOpen, Brain, CalendarDays, Gauge, Settings, Upload, UserRound } from "lucide-react";
+import { BookOpen, Brain, CalendarDays, FileCheck2, Gauge, GraduationCap, Settings, UserRound } from "lucide-react";
 
 export const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: Gauge },
   { href: "/courses", label: "Courses", icon: BookOpen },
-  { href: "/upload", label: "Upload Center", icon: Upload },
   { href: "/predictions", label: "AI Predictions", icon: Brain },
-  { href: "/planner", label: "Study Planner", icon: CalendarDays }
+  { href: "/planner", label: "Study Planner", icon: CalendarDays },
+  { href: "/mock-exams", label: "Mock Exams", icon: GraduationCap }
 ];
 
 export const accountItems = [

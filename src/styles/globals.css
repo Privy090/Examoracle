@@ -6,23 +6,33 @@
 
 :root {
   --font-sans: "Plus Jakarta Sans";
-  --background: #0a0a0f;
-  --surface: #111118;
-  --card: #16161f;
-  --border: #222230;
-  --text: #f0f0ff;
-  --muted: #7070a0;
-  --subtle: #2a2a3a;
+  --background: #050816;
+  --surface: #0d1328;
+  --card: rgba(14, 20, 38, 0.92);
+  --border: rgba(142, 159, 255, 0.16);
+  --text: #f7f8ff;
+  --muted: #8d95b8;
+  --subtle: #151d35;
+  --primary: #6b7cff;
+  --primary-light: #9ba7ff;
+  --accent: #3ed6b5;
+  --accent-soft: rgba(62, 214, 181, 0.18);
+  --shadow: 0 20px 90px rgba(3, 8, 24, 0.38);
 }
 
 .light {
-  --background: #f7f7ff;
+  --background: #f4f6ff;
   --surface: #ffffff;
-  --card: #fafaff;
-  --border: #e8e8f0;
-  --text: #0a0a1f;
-  --muted: #6b6b8a;
-  --subtle: #eeeef8;
+  --card: rgba(255, 255, 255, 0.95);
+  --border: rgba(108, 124, 255, 0.16);
+  --text: #0f142b;
+  --muted: #6f7595;
+  --subtle: #eef2ff;
+  --primary: #5f6dff;
+  --primary-light: #8e9dff;
+  --accent: #18b592;
+  --accent-soft: rgba(24, 181, 146, 0.12);
+  --shadow: 0 20px 80px rgba(70, 86, 162, 0.16);
 }
 
 * {
@@ -37,9 +47,29 @@ html {
 body {
   margin: 0;
   overflow-x: hidden;
-  background: var(--background);
+  background:
+    radial-gradient(circle at top left, rgba(107, 124, 255, 0.14), transparent 28%),
+    radial-gradient(circle at right center, rgba(62, 214, 181, 0.12), transparent 24%),
+    var(--background);
   color: var(--text);
   font-family: var(--font-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image: linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 36px 36px;
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.6), transparent);
+}
+
+::selection {
+  background: rgba(107, 124, 255, 0.32);
+  color: var(--text);
 }
 
 button,
@@ -54,8 +84,14 @@ a:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-  outline: 2px solid #8b85ff;
+  outline: 2px solid var(--primary);
   outline-offset: 2px;
+}
+
+@layer components {
+  .glass-panel {
+    @apply rounded-[28px] border border-[var(--border)] bg-[var(--card)]/90 shadow-[var(--shadow)] backdrop-blur-xl;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -66,14 +102,5 @@ textarea:focus-visible {
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
-  }
-}
-
-@keyframes shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
   }
 }

@@ -2,7 +2,7 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { Course, CoursePrediction, StudyTask, UploadedFileRecord, UserProfile } from "@/types/domain";
+import type { AnalysisJob, Course, CoursePrediction, StudyTask, UploadedFileRecord, UserProfile } from "@/types/domain";
 
 interface AppState {
   darkMode: boolean;
@@ -10,6 +10,7 @@ interface AppState {
   courses: Course[];
   files: UploadedFileRecord[];
   predictions: Record<string, CoursePrediction>;
+  analysisJobs: Record<string, AnalysisJob>;
   tasks: StudyTask[];
   setDarkMode: (darkMode: boolean) => void;
   setUser: (user: UserProfile | null) => void;
@@ -20,6 +21,7 @@ interface AppState {
   upsertFile: (file: UploadedFileRecord) => void;
   removeFile: (id: string) => void;
   setPrediction: (prediction: CoursePrediction) => void;
+  setAnalysisJob: (job: AnalysisJob) => void;
   setTasks: (tasks: StudyTask[]) => void;
   toggleTask: (id: string) => void;
   resetWorkspace: () => void;
@@ -33,6 +35,7 @@ export const useAppStore = create<AppState>()(
       courses: [],
       files: [],
       predictions: {},
+      analysisJobs: {},
       tasks: [],
       setDarkMode: (darkMode) => set({ darkMode }),
       setUser: (user) => set({ user }),
@@ -43,9 +46,10 @@ export const useAppStore = create<AppState>()(
       upsertFile: (file) => set((state) => ({ files: [...state.files.filter((item) => item.id !== file.id), file] })),
       removeFile: (id) => set((state) => ({ files: state.files.filter((file) => file.id !== id) })),
       setPrediction: (prediction) => set((state) => ({ predictions: { ...state.predictions, [prediction.courseId]: prediction } })),
+      setAnalysisJob: (job) => set((state) => ({ analysisJobs: { ...state.analysisJobs, [job.courseId]: job } })),
       setTasks: (tasks) => set({ tasks }),
       toggleTask: (id) => set((state) => ({ tasks: state.tasks.map((task) => (task.id === id ? { ...task, done: !task.done } : task)) })),
-      resetWorkspace: () => set({ courses: [], files: [], predictions: {}, tasks: [] })
+      resetWorkspace: () => set({ courses: [], files: [], predictions: {}, analysisJobs: {}, tasks: [] })
     }),
     {
       name: "examoracle.app",
@@ -56,6 +60,7 @@ export const useAppStore = create<AppState>()(
         courses: [],
         files: [],
         predictions: {},
+        analysisJobs: {},
         tasks: []
       })
     }

@@ -7,6 +7,7 @@ import { useState } from "react";
 import { type Resolver, useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { authService } from "@/services/api/auth.service";
 import { useAppStore } from "@/store/app-store";
 import { loginSchema, signupSchema } from "@/validators/auth.schema";
 
@@ -17,45 +18,45 @@ type AuthValues = {
   school: string;
   faculty: string;
   department: string;
-  level: string;
 };
 
 export function AuthScreen() {
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [showPass, setShowPass] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
-  const existingUser = useAppStore((state) => state.user);
   const setUser = useAppStore((state) => state.setUser);
   const schema = mode === "login" ? loginSchema : signupSchema;
   const form = useForm<AuthValues>({
     resolver: zodResolver(schema) as unknown as Resolver<AuthValues>,
-    defaultValues: { email: "", password: "", fullName: "", school: "", faculty: "", department: "", level: "300" }
+    defaultValues: { email: "", password: "", fullName: "", school: "", faculty: "", department: "" }
   });
 
   async function onSubmit(values: AuthValues) {
-    if (mode === "login") {
-      if (!existingUser || existingUser.email.toLowerCase() !== values.email.toLowerCase()) {
-        form.setError("email", { message: "No local account found for this email. Create an account first." });
+    setAuthError(null);
+    setIsSubmitting(true);
+
+    try {
+      if (mode === "login") {
+        const response = await authService.login(values.email, values.password);
+        window.localStorage.setItem("examoracle.accessToken", response.access_token);
+        window.localStorage.setItem("examoracle.refreshToken", response.refresh_token);
+        setUser(response.user);
+        router.push(response.user.onboardingComplete ? "/dashboard" : "/onboarding");
         return;
       }
-      router.push(existingUser.onboardingComplete ? "/dashboard" : "/onboarding");
-      return;
-    }
 
-    setUser({
-      id: crypto.randomUUID(),
-      fullName: values.fullName,
-      email: values.email,
-      school: values.school,
-      faculty: values.faculty,
-      department: values.department,
-      level: values.level,
-      avatar: null,
-      role: "student",
-      joinedAt: new Date().toISOString(),
-      onboardingComplete: false
-    });
-    router.push("/onboarding");
+      const response = await authService.register(values);
+      window.localStorage.setItem("examoracle.accessToken", response.access_token);
+      window.localStorage.setItem("examoracle.refreshToken", response.refresh_token);
+      setUser({ ...response.user, onboardingComplete: false });
+      router.push("/onboarding");
+    } catch {
+      setAuthError("Authentication service is unavailable. Start the FastAPI backend or check NEXT_PUBLIC_API_URL.");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -109,7 +110,10 @@ export function AuthScreen() {
             </Field>
           </div>
 
-          <Button className="mt-6 w-full" type="submit">{mode === "login" ? "Sign In to ExamOracle" : "Create Free Account"}</Button>
+          <Button className="mt-6 w-full" type="submit" disabled={isSubmitting}>
+            {isSubmitting ? (mode === "login" ? "Signing in..." : "Creating account...") : mode === "login" ? "Sign In to ExamOracle" : "Create Free Account"}
+          </Button>
+          {authError && <p className="mt-3 text-sm font-semibold text-oracle-accent">{authError}</p>}
         </form>
       </div>
     </main>
