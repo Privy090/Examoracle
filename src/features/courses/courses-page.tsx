@@ -25,6 +25,7 @@ export function CoursesPage() {
   const [analyzing, setAnalyzing] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [uploadingCourseId, setUploadingCourseId] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const upsertFile = useAppStore((state) => state.upsertFile);
   const { upload, cancel } = useUploadQueue((file) => upsertFile(file));
@@ -39,6 +40,7 @@ export function CoursesPage() {
     try {
       const created = await courseService.create(parsed.data);
       addCourse(created);
+      setUploadingCourseId(created.id);
       // if files were selected before creating the course, upload them now
       if (selectedFiles.length) {
         // limit concurrency to 3
@@ -62,6 +64,7 @@ export function CoursesPage() {
         }
         await Promise.all(queue);
         setSelectedFiles([]);
+        setUploadingCourseId(null);
       }
     } catch {
       setError("Course service is unavailable. Start the FastAPI backend before creating courses.");
@@ -153,6 +156,29 @@ export function CoursesPage() {
                   </li>
                 ))}
               </ul>
+            )}
+            {uploadingCourseId && (
+              <div className="mt-3">
+                <h4 className="text-sm font-bold">Uploading files</h4>
+                <ul className="mt-2 space-y-2">
+                  {files.filter((f) => f.courseId === uploadingCourseId).map((f) => (
+                    <li key={f.id} className="rounded-md border border-[var(--border)] bg-[var(--card)] p-2 text-sm">
+                      <div className="flex items-center justify-between">
+                        <div className="min-w-0 truncate font-semibold">{f.name}</div>
+                        <div className="text-xs text-[var(--muted)]">{f.status}</div>
+                      </div>
+                      <div className="mt-2 h-2 w-full rounded bg-[var(--background)]">
+                        <div style={{ width: `${f.progress ?? 0}%` }} className="h-2 rounded bg-oracle-primary" />
+                      </div>
+                      <div className="mt-2 flex items-center justify-end gap-2">
+                        {f.status === "uploading" && <button type="button" onClick={() => cancel(f.id)} className="text-xs text-oracle-accent">Cancel</button>}
+                        {f.status === "error" && <span className="text-xs text-oracle-accent">Failed</span>}
+                        {f.status === "completed" && <span className="text-xs text-oracle-primary">Done</span>}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )}
           </div>
           {error && <p className="text-sm font-semibold text-oracle-accent">{error}</p>}
