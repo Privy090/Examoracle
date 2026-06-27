@@ -82,7 +82,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {!collapsed && user && (
             <div className="mt-3 rounded-[20px] border border-[var(--border)] bg-[var(--subtle)]/70 p-3">
               <div className="flex items-center gap-3">
-                <Avatar initial={initials} avatar={user.avatar} />
+                <Link href="/profile" aria-label="Open profile">
+                  <Avatar initial={initials} avatar={user.avatar} />
+                </Link>
                 <div className="min-w-0">
                   <div className="truncate text-sm font-extrabold">{user.fullName.split(" ")[0]}</div>
                   <div className="truncate text-xs text-[var(--muted)]">{user.school}</div>
@@ -109,7 +111,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Button variant="secondary" className="h-10 w-10 px-0" onClick={() => setDarkMode(!darkMode)} aria-label="Toggle theme">
                 {darkMode ? <Sun size={18} /> : <Moon size={18} />}
               </Button>
-              <Avatar initial={initials} avatar={user?.avatar} />
+              <Link href="/profile" aria-label="Open profile">
+                <Avatar initial={initials} avatar={user?.avatar} />
+              </Link>
             </div>
           </div>
         </header>
