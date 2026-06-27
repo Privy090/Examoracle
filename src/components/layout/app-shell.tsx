@@ -82,7 +82,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {!collapsed && user && (
             <div className="mt-3 rounded-[20px] border border-[var(--border)] bg-[var(--subtle)]/70 p-3">
               <div className="flex items-center gap-3">
-                <Avatar initial={initials} />
+                <Avatar initial={initials} avatar={user.avatar} />
                 <div className="min-w-0">
                   <div className="truncate text-sm font-extrabold">{user.fullName.split(" ")[0]}</div>
                   <div className="truncate text-xs text-[var(--muted)]">{user.school}</div>
@@ -109,7 +109,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Button variant="secondary" className="h-10 w-10 px-0" onClick={() => setDarkMode(!darkMode)} aria-label="Toggle theme">
                 {darkMode ? <Sun size={18} /> : <Moon size={18} />}
               </Button>
-              <Avatar initial={initials} />
+              <Avatar initial={initials} avatar={user?.avatar} />
             </div>
           </div>
         </header>
@@ -133,7 +133,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   );
 }
 
-function Avatar({ initial }: { initial: string }) {
+function Avatar({ initial, avatar }: { initial: string; avatar?: string | null }) {
+  if (avatar) {
+    return (
+      <img src={avatar} alt="Profile" className="h-9 w-9 shrink-0 rounded-full object-cover" />
+    );
+  }
+
   return (
     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] text-sm font-extrabold text-white">
       {initial}

@@ -8,7 +8,5 @@ export const navItems = [
   { href: "/mock-exams", label: "Mock Exams", icon: GraduationCap }
 ];
 
-export const accountItems = [
-  { href: "/profile", label: "Profile", icon: UserRound },
-  { href: "/settings", label: "Settings", icon: Settings }
-];
+// Keep account items empty — profile + settings live inside the profile area now.
+export const accountItems: { href: string; label: string; icon: any }[] = [];

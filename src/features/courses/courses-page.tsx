@@ -1,13 +1,14 @@
 "use client";
 
 import { Plus, Sparkles } from "lucide-react";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { CourseCard } from "@/components/courses/course-card";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useAppStore } from "@/store/app-store";
 import { courseSchema } from "@/validators/course.schema";
+import { useUploadQueue } from "@/hooks/use-upload";
 import type { Course } from "@/types/domain";
 import { analysisJobService } from "@/services/api/analysis-job.service";
 import { courseService } from "@/services/api/course.service";
@@ -23,6 +24,10 @@ export function CoursesPage() {
   const [error, setError] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const fileRef = useRef<HTMLInputElement | null>(null);
+  const upsertFile = useAppStore((state) => state.upsertFile);
+  const { upload, cancel } = useUploadQueue((file) => upsertFile(file));
 
   async function submit() {
     const parsed = courseSchema.safeParse(form);
@@ -33,6 +38,13 @@ export function CoursesPage() {
     try {
       const created = await courseService.create(parsed.data);
       addCourse(created);
+      // if files were selected before creating the course, upload them now
+      if (selectedFiles.length) {
+        for (const f of selectedFiles) {
+          void upload(created.id, f);
+        }
+        setSelectedFiles([]);
+      }
     } catch {
       setError("Course service is unavailable. Start the FastAPI backend before creating courses.");
       return;
@@ -90,6 +102,26 @@ export function CoursesPage() {
               </select>
             </label>
             <Input value={form.credits} onChange={(event) => setForm((prev) => ({ ...prev, credits: Number(event.target.value) }))} type="number" min={1} max={6} aria-label="Credits" />
+          </div>
+          <div className="mt-3">
+            <input ref={fileRef} onChange={(e) => {
+              const files = e.target.files ? Array.from(e.target.files) : [];
+              setSelectedFiles((prev) => [...prev, ...files]);
+            }} multiple accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,image/*" type="file" className="hidden" />
+            <div className="flex items-center gap-3">
+              <button type="button" onClick={() => fileRef.current?.click()} className="text-sm font-semibold text-oracle-primary">Attach materials</button>
+              <span className="text-sm text-[var(--muted)]">{selectedFiles.length} file(s) selected</span>
+            </div>
+            {selectedFiles.length > 0 && (
+              <ul className="mt-2 space-y-1">
+                {selectedFiles.map((f, idx) => (
+                  <li key={`${f.name}-${idx}`} className="flex items-center justify-between rounded-md border border-[var(--border)] bg-[var(--card)] p-2 text-sm">
+                    <span className="truncate">{f.name}</span>
+                    <button type="button" onClick={() => setSelectedFiles((prev) => prev.filter((_, i) => i !== idx))} className="text-sm text-oracle-accent">Remove</button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
           {error && <p className="text-sm font-semibold text-oracle-accent">{error}</p>}
           <Button className="w-full sm:w-fit" onClick={submit}>Save Course</Button>

@@ -5,19 +5,61 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useAppStore } from "@/store/app-store";
+import { useState, useRef } from "react";
 
 export function ProfilePage({ settingsOnly = false }: { settingsOnly?: boolean }) {
   const user = useAppStore((state) => state.user)!;
   const darkMode = useAppStore((state) => state.darkMode);
   const setDarkMode = useAppStore((state) => state.setDarkMode);
+  const setUser = useAppStore((state) => state.setUser);
+  const [preview, setPreview] = useState<string | null>(user.avatar ?? null);
+  const fileRef = useRef<HTMLInputElement | null>(null);
+
+  function onSelectImage(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const data = reader.result as string;
+      setPreview(data);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function saveAvatar() {
+    if (!user) return;
+    setUser({ ...user, avatar: preview });
+  }
+
+  function removeAvatar() {
+    setPreview(null);
+    if (!user) return;
+    setUser({ ...user, avatar: null });
+    if (fileRef.current) fileRef.current.value = "";
+  }
 
   return (
     <div className="mx-auto grid max-w-3xl gap-4">
       {!settingsOnly && (
         <section className="text-center">
-          <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-oracle-primary to-oracle-accent text-3xl font-black text-white shadow-glow">{user.fullName[0]}</div>
+          <div className="mx-auto mb-4">
+            {preview ? (
+              <img src={preview} alt="avatar" className="mx-auto mb-3 h-20 w-20 rounded-full object-cover shadow-inner" />
+            ) : (
+              <div className="mx-auto mb-3 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-oracle-primary to-oracle-accent text-3xl font-black text-white shadow-glow">{user.fullName[0]}</div>
+            )}
+
+            <div className="flex items-center justify-center gap-2">
+              <input ref={fileRef} onChange={onSelectImage} accept="image/*" type="file" className="hidden" id="profile-image-input" />
+              <label htmlFor="profile-image-input" onClick={() => fileRef.current?.click()} className="text-sm font-semibold text-oracle-primary cursor-pointer">Change photo</label>
+              {preview && <button onClick={removeAvatar} className="text-sm text-oracle-accent">Remove</button>}
+            </div>
+          </div>
           <h2 className="text-2xl font-black">{user.fullName}</h2>
           <p className="text-sm text-[var(--muted)]">{user.email}</p>
+          <div className="mt-3">
+            <Button variant="primary" onClick={saveAvatar}>Save avatar</Button>
+          </div>
         </section>
       )}
 
