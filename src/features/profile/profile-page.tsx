@@ -1,11 +1,10 @@
 "use client";
 
-import { BookOpen, GraduationCap, Moon, School, Star, Sun } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { BookOpen, GraduationCap, Moon, School, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useAppStore } from "@/store/app-store";
-import { useState, useRef } from "react";
+import { useState, useRef, type ChangeEvent } from "react";
 
 export function ProfilePage({ settingsOnly = false }: { settingsOnly?: boolean }) {
   const user = useAppStore((state) => state.user)!;
@@ -13,11 +12,14 @@ export function ProfilePage({ settingsOnly = false }: { settingsOnly?: boolean }
   const setDarkMode = useAppStore((state) => state.setDarkMode);
   const setUser = useAppStore((state) => state.setUser);
   const [preview, setPreview] = useState<string | null>(user.avatar ?? null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement | null>(null);
 
-  function onSelectImage(e: React.ChangeEvent<HTMLInputElement>) {
+  function onSelectImage(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    setAvatarFile(file);
     const reader = new FileReader();
     reader.onload = () => {
       const data = reader.result as string;
@@ -26,13 +28,34 @@ export function ProfilePage({ settingsOnly = false }: { settingsOnly?: boolean }
     reader.readAsDataURL(file);
   }
 
-  function saveAvatar() {
-    if (!user) return;
-    setUser({ ...user, avatar: preview });
+  async function saveAvatar() {
+    if (!user || !avatarFile) return;
+    setAvatarUploading(true);
+    const formData = new FormData();
+    formData.append("user_id", user.id);
+    formData.append("file", avatarFile);
+
+    try {
+      const response = await fetch("/api/users/avatar", {
+        method: "POST",
+        body: formData,
+      });
+      if (!response.ok) {
+        throw new Error("Upload failed");
+      }
+      const result = await response.json();
+      setUser({ ...user, avatar: result.avatarUrl });
+      setPreview(result.avatarUrl);
+    } catch {
+      // preserve preview and let the user retry
+    } finally {
+      setAvatarUploading(false);
+    }
   }
 
   function removeAvatar() {
     setPreview(null);
+    setAvatarFile(null);
     if (!user) return;
     setUser({ ...user, avatar: null });
     if (fileRef.current) fileRef.current.value = "";
@@ -58,7 +81,9 @@ export function ProfilePage({ settingsOnly = false }: { settingsOnly?: boolean }
           <h2 className="text-2xl font-black">{user.fullName}</h2>
           <p className="text-sm text-[var(--muted)]">{user.email}</p>
           <div className="mt-3">
-            <Button variant="primary" onClick={saveAvatar}>Save avatar</Button>
+            <Button variant="primary" onClick={saveAvatar} disabled={!avatarFile || avatarUploading}>
+              {avatarUploading ? "Saving..." : "Save avatar"}
+            </Button>
           </div>
         </section>
       )}

@@ -64,7 +64,7 @@ def complete_upload(req: CompleteRequest):
     final_dir.mkdir(parents=True, exist_ok=True)
     final_path = final_dir / req.name
     temp_path.replace(final_path)
-    # delegate to service to create metadata record if needed
+    uploaded_at = final_path.stat().st_mtime
     return {
         "id": req.uploadId,
         "courseId": req.courseId,
@@ -72,7 +72,7 @@ def complete_upload(req: CompleteRequest):
         "size": req.size,
         "type": req.type,
         "status": "completed",
-        "uploadedAt": temp_path.stat().st_mtime,
+        "uploadedAt": __import__("datetime").datetime.fromtimestamp(uploaded_at).isoformat(),
     }
 
 
