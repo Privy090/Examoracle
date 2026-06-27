@@ -28,6 +28,7 @@ export function CoursesPage() {
   const fileRef = useRef<HTMLInputElement | null>(null);
   const upsertFile = useAppStore((state) => state.upsertFile);
   const { upload, cancel } = useUploadQueue((file) => upsertFile(file));
+  
 
   async function submit() {
     const parsed = courseSchema.safeParse(form);
@@ -40,9 +41,26 @@ export function CoursesPage() {
       addCourse(created);
       // if files were selected before creating the course, upload them now
       if (selectedFiles.length) {
+        // limit concurrency to 3
+        const concurrency = 3;
+        const queue: Promise<void>[] = [];
         for (const f of selectedFiles) {
-          void upload(created.id, f);
+          const p = (async () => {
+            try {
+              await upload(created.id, f);
+            } catch {
+              // uploadService already reports errors via store; continue
+            }
+          })();
+          queue.push(p);
+          if (queue.length >= concurrency) {
+            await Promise.race(queue).then(() => {
+              // remove settled promises
+              for (let i = queue.length - 1; i >= 0; i--) if ((queue[i] as any).isSettled) queue.splice(i, 1);
+            }).catch(() => {});
+          }
         }
+        await Promise.all(queue);
         setSelectedFiles([]);
       }
     } catch {
@@ -88,7 +106,15 @@ export function CoursesPage() {
 
       {open && (
         <Card className="grid gap-3 rounded-[24px]">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault();
+                const files = Array.from(e.dataTransfer?.files ?? []);
+                setSelectedFiles((prev) => [...prev, ...files]);
+              }}
+              className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
+            >
             <Input value={form.code} onChange={(event) => setForm((prev) => ({ ...prev, code: event.target.value }))} placeholder="Course code" aria-label="Course code" />
             <Input value={form.title} onChange={(event) => setForm((prev) => ({ ...prev, title: event.target.value }))} placeholder="Course title" aria-label="Course title" className="lg:col-span-2" />
             <label className="grid gap-1.5">
@@ -104,20 +130,26 @@ export function CoursesPage() {
             <Input value={form.credits} onChange={(event) => setForm((prev) => ({ ...prev, credits: Number(event.target.value) }))} type="number" min={1} max={6} aria-label="Credits" />
           </div>
           <div className="mt-3">
-            <input ref={fileRef} onChange={(e) => {
-              const files = e.target.files ? Array.from(e.target.files) : [];
-              setSelectedFiles((prev) => [...prev, ...files]);
-            }} multiple accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,image/*" type="file" className="hidden" />
-            <div className="flex items-center gap-3">
-              <button type="button" onClick={() => fileRef.current?.click()} className="text-sm font-semibold text-oracle-primary">Attach materials</button>
-              <span className="text-sm text-[var(--muted)]">{selectedFiles.length} file(s) selected</span>
+            <div className="rounded-md border-2 border-dashed border-[var(--border)] p-4 text-center">
+              <p className="text-sm text-[var(--muted)]">Drag and drop course materials here, or</p>
+              <div className="mt-2 flex items-center justify-center gap-3">
+                <button type="button" onClick={() => fileRef.current?.click()} className="text-sm font-semibold text-oracle-primary">Select files</button>
+                <span className="text-sm text-[var(--muted)]">{selectedFiles.length} file(s) selected</span>
+              </div>
+              <input ref={fileRef} onChange={(e) => {
+                const files = e.target.files ? Array.from(e.target.files) : [];
+                setSelectedFiles((prev) => [...prev, ...files]);
+              }} multiple accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,image/*" type="file" className="hidden" />
             </div>
             {selectedFiles.length > 0 && (
-              <ul className="mt-2 space-y-1">
+              <ul className="mt-3 space-y-2">
                 {selectedFiles.map((f, idx) => (
                   <li key={`${f.name}-${idx}`} className="flex items-center justify-between rounded-md border border-[var(--border)] bg-[var(--card)] p-2 text-sm">
-                    <span className="truncate">{f.name}</span>
-                    <button type="button" onClick={() => setSelectedFiles((prev) => prev.filter((_, i) => i !== idx))} className="text-sm text-oracle-accent">Remove</button>
+                    <div className="min-w-0 truncate">{f.name}</div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs text-[var(--muted)]">{Math.round(f.size/1024)} KB</span>
+                      <button type="button" onClick={() => setSelectedFiles((prev) => prev.filter((_, i) => i !== idx))} className="text-sm text-oracle-accent">Remove</button>
+                    </div>
                   </li>
                 ))}
               </ul>
