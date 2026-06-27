@@ -11,20 +11,39 @@ export interface UploadOptions {
 
 export const uploadService = {
   async upload({ courseId, file, materialType = "material", signal, onProgress }: UploadOptions): Promise<UploadedFileRecord> {
-    const body = new FormData();
-    body.append("course_id", courseId);
-    body.append("material_type", materialType);
-    body.append("file", file);
-
-    const { data } = await apiClient.post<UploadedFileRecord>("/api/uploads", body, {
-      signal,
-      headers: { "Content-Type": "multipart/form-data" },
-      onUploadProgress: (event) => {
-        if (!event.total) return;
-        onProgress?.(Math.round((event.loaded / event.total) * 100));
-      }
+    // 1) Request a presigned upload URL from the backend
+    const presignRes = await apiClient.post<{ uploadId: string; uploadUrl: string }>("/api/uploads/presign", {
+      course_id: courseId,
+      filename: file.name,
+      content_type: file.type || "application/octet-stream",
+      material_type: materialType,
     });
 
+    const { uploadId, uploadUrl } = presignRes.data;
+
+    // 2) PUT the file directly to the provided upload URL (use fetch to allow AbortSignal)
+    await fetch(uploadUrl, {
+      method: "PUT",
+      headers: {
+        "Content-Type": file.type || "application/octet-stream",
+        "x-filename": file.name,
+      },
+      body: file,
+      signal,
+    });
+
+    // 3) Tell the backend to finalize the upload and create metadata
+    const { data } = await apiClient.post<UploadedFileRecord>("/api/uploads/complete", {
+      uploadId,
+      courseId,
+      name: file.name,
+      size: file.size,
+      type: file.type || "application/octet-stream",
+      materialType: materialType,
+    });
+
+    // Note: we don't have per-chunk progress with this simple flow; call onProgress=100
+    onProgress?.(100);
     return data;
   }
 };
